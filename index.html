@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Diseño de modelos de conexión de red con estándares actualizados</title>
+  <meta name="description" content="Reporte de prácticas de redes: ponchado de cable UTP (normas T568A y T568B), configuración de un router TP-Link TL-WR840N y conexión de una cámara IP D-Link DCS-933L.">
+  <meta name="theme-color" content="#eef2f6">
+  <meta name="author" content="Juan Pablo Cime Chim">
+
+  <!-- FAVICON: Usa el logo de la escuela. Si no existe, el navegador mostrará un icono por defecto. -->
+  <link rel="icon" type="image/png" href="img/logo-motul.png">
+  <link rel="apple-touch-icon" href="img/logo-motul.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --paper:#fcfdfe; --tint:#eef2f6; --ink:#18212b; --muted:#566372; --line:#d3dbe3;
+      --blue:#2b66c9; --orange:#e07b24; --green:#2f9a55; --brown:#7b4b2a; --cambia:#fdf1e3;
+      --serif:"Literata",Georgia,"Times New Roman",serif;
+      --sans:"Archivo","Helvetica Neue",Arial,sans-serif;
+      --mono:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",Menlo,monospace;
+      --col:48rem;
+      --shadow:0 4px 12px rgba(0,0,0,.04);
+      --radius:6px;
+      color-scheme:light;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth;scroll-padding-top:4.5rem;-webkit-text-size-adjust:100%}
+    body{margin:0;background:var(--paper);color:var(--ink);font:400 1.0625rem/1.75 var(--serif);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:hidden}
+    a{color:var(--blue);text-decoration:none;transition:color .2s}
+    a:hover{text-decoration:underline}
+    a:focus-visible,button:focus-visible,.fig-frame:focus-visible{outline:2px solid var(--blue);outline-offset:3px;border-radius:var(--radius)}
+    p{margin:0 0 1rem}
+    code{font:400 .88em var(--mono);background:var(--tint);padding:.15em .4em;border-radius:4px;overflow-wrap:anywhere}
+    pre{margin:1rem 0 .4rem;padding:1rem 1.1rem;background:var(--tint);border-left:3px solid var(--pc,var(--blue));border-radius:0 var(--radius) var(--radius) 0;overflow-x:auto;font:400 .85rem/1.65 var(--mono);box-shadow:var(--shadow)}
+    pre code{background:none;padding:0;font-size:inherit}
+    .pie{font:400 .88rem/1.5 var(--sans);color:var(--muted);margin:0 0 1rem}
+
+    /* Colores de hilos UTP */
+    .w-n{background:#e07b24}
+    .w-v{background:#2f9a55}
+    .w-az{background:#2b66c9}
+    .w-c{background:#7b4b2a}
+    .w-bn{background:repeating-linear-gradient(-45deg,#e07b24 0 4px,#fff 4px 8px)}
+    .w-bv{background:repeating-linear-gradient(-45deg,#2f9a55 0 4px,#fff 4px 8px)}
+    .w-baz{background:repeating-linear-gradient(-45deg,#2b66c9 0 4px,#fff 4px 8px)}
+    .w-bc{background:repeating-linear-gradient(-45deg,#7b4b2a 0 4px,#fff 4px 8px)}
+
+    /* Portada */
+    .portada{display:grid;grid-template-columns:11rem 1fr;min-height:100svh;background:linear-gradient(135deg,var(--tint) 0%,#e2e8f0 100%);position:relative;overflow:hidden}
+    .hilos{display:flex;height:100%;position:relative;z-index:1}
+    .hilos span{flex:1;transform-origin:top;box-shadow:inset 0 0 0 1px rgba(0,0,0,.18);animation:crece 1s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--i)*70ms)}
+    @keyframes crece{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+    @keyframes crece-x{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+    .portada-txt{padding:clamp(2rem,6vw,5rem);display:flex;flex-direction:column;justify-content:center;max-width:60rem;position:relative;z-index:2}
+
+    /* Logo de la escuela */
+    .logo-escuela{max-height:4.5rem;width:auto;margin-bottom:1.5rem;object-fit:contain;align-self:flex-start;filter:drop-shadow(0 2px 4px rgba(0,0,0,.1))}
+    .logo-escuela-footer{max-height:3rem;width:auto;margin:0 auto 1rem;display:block;filter:grayscale(100%) opacity(.7)}
+
+    .inst{font:600 1.05rem/1.4 var(--sans);margin:0;color:var(--ink)}
+    .plantel{font:400 1rem/1.4 var(--sans);color:var(--muted);margin:.15rem 0 2rem}
+    .portada h1{font:700 clamp(2rem,5.2vw,3.7rem)/1.06 var(--sans);letter-spacing:-.02em;margin:0 0 1rem;max-width:18ch;overflow-wrap:break-word;color:var(--ink)}
+    .subtitulo{font:italic 400 1.25rem/1.5 var(--serif);color:var(--muted);margin:0 0 3rem}
+    .datos{display:grid;grid-template-columns:8rem 1fr;margin:0;max-width:34rem;background:rgba(255,255,255,.6);padding:1.5rem;border-radius:var(--radius);backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,.8)}
+    .datos dt,.datos dd{margin:0;padding:.6rem 0;border-top:1px solid var(--line)}
+    .datos dt:first-of-type,.datos dd:first-of-type{border-top:none;padding-top:0}
+    .datos dt{font:500 .92rem var(--sans);color:var(--muted)}
+    .datos dd{font:400 1rem/1.5 var(--serif);font-weight:500}
+
+    /* Navegación */
+    .nav{position:sticky;top:0;z-index:10;background:rgba(252,253,254,.95);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid var(--line);box-shadow:0 1px 3px rgba(0,0,0,.02)}
+    .nav-in{max-width:64rem;margin:0 auto;display:flex;align-items:center;gap:1rem;padding:0 1.25rem}
+    .brand{display:flex;align-items:center;gap:.5rem;font:700 .95rem var(--sans);color:var(--ink);text-decoration:none;white-space:nowrap;padding:.6rem 0}
+    .brand img{height:1.8rem;width:auto}
+    .links{display:flex;gap:.15rem;overflow-x:auto;margin-left:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+    .links::-webkit-scrollbar{display:none}
+    .links a{font:500 .9rem var(--sans);color:var(--muted);text-decoration:none;padding:.9rem .7rem;white-space:nowrap;border-bottom:2px solid transparent;transition:all .2s}
+    .links a:hover{color:var(--ink);text-decoration:none;background:rgba(43,102,201,.05)}
+    .links a.on{color:var(--ink);border-bottom-color:var(--blue);font-weight:600}
+
+    /* Contenido */
+    main{max-width:var(--col);margin:0 auto;padding:0 1.25rem 4rem}
+    section{padding-top:3.75rem}
+    h2{font:700 1.85rem/1.15 var(--sans);letter-spacing:-.01em;margin:0 0 1.1rem;overflow-wrap:break-word}
+    h3{font:600 1.05rem/1.4 var(--sans);margin:2rem 0 .45rem;color:var(--ink)}
+    .practica::before{content:"";display:block;height:6px;width:4rem;background:var(--pc);margin-bottom:1.1rem;border-radius:3px}
+    .p1{--pc:var(--orange)} .p2{--pc:var(--green)} .p3{--pc:var(--blue)}
+    ul,ol{margin:0 0 1rem;padding-left:1.35rem}
+    li{margin:.35rem 0;padding-left:.2rem}
+    ol li::marker{color:var(--pc,var(--blue));font-family:var(--sans);font-weight:700}
+    .nota{border-left:3px solid var(--pc,var(--blue));padding:1rem;margin:1.25rem 0;background:rgba(43,102,201,.03);border-radius:0 var(--radius) var(--radius) 0}
+    .nota p:last-child{margin-bottom:0}
+    .nota strong{font-family:var(--sans);font-weight:600}
+
+    /* Secuencia de prácticas */
+    .secuencia{list-style:none;margin:1.25rem 0 0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem}
+    .secuencia li{margin:0;padding:1rem;border-top:4px solid var(--c);border-radius:var(--radius);background:#fff;box-shadow:var(--shadow)}
+    .secuencia li:nth-child(1){--c:var(--orange)}
+    .secuencia li:nth-child(2){--c:var(--green)}
+    .secuencia li:nth-child(3){--c:var(--blue)}
+    .secuencia strong{display:block;font:600 1rem/1.4 var(--sans);margin-bottom:.25rem}
+    .secuencia span{display:block;font:400 .95rem/1.55 var(--sans);color:var(--muted)}
+
+    /* Estándares */
+    .estandares{display:grid;grid-template-columns:12rem 1fr;margin:1rem 0 0}
+    .estandares dt,.estandares dd{margin:0;padding:.95rem 0;border-top:1px solid var(--line)}
+    .estandares dt{font:600 .98rem/1.5 var(--sans)}
+    .estandares dd:last-of-type,.estandares dt:last-of-type{border-bottom:1px solid var(--line)}
+
+    /* Tablas */
+    .tabla-wrap{overflow-x:auto;margin:1rem 0;box-shadow:var(--shadow);border-radius:var(--radius);background:#fff}
+    table{width:100%;border-collapse:collapse;font:400 .95rem/1.5 var(--sans)}
+    th{text-align:left;font-weight:600;padding:.75rem .9rem;border-bottom:2px solid var(--ink);white-space:nowrap;background:#f8fafc}
+    td{padding:.75rem .9rem;border-bottom:1px solid var(--line);vertical-align:top}
+    tbody th{border-bottom:1px solid var(--line);font-weight:600;white-space:normal;vertical-align:top;background:#f8fafc}
+    .cambia td{background:var(--cambia);font-weight:500}
+    .cambia td:first-child{padding-left:.9rem}
+    .hilo{display:inline-block;width:1.5rem;height:.7rem;border-radius:2px;margin-right:.55rem;vertical-align:middle;box-shadow:inset 0 0 0 1px rgba(0,0,0,.28)}
+
+    /* Conectores RJ45 */
+    .cable{display:grid;grid-template-columns:1fr auto 1fr;gap:1.25rem;align-items:start;margin:1.25rem 0 2.75rem}
+    .rj-body{display:flex;gap:2px;height:3.5rem}
+    .bar{position:relative;flex:1;box-shadow:inset 0 0 0 1px rgba(0,0,0,.28);border-radius:2px 2px 0 0}
+    .bar b{position:absolute;top:100%;left:0;right:0;text-align:center;font:500 .72rem/1.6 var(--sans);color:var(--muted)}
+    .rj-label{margin-top:1.7rem;font:500 .85rem var(--sans);color:var(--muted)}
+    .cable-mid{align-self:start;margin-top:.4rem;text-align:center;font:600 .85rem/1.35 var(--sans)}
+    .cable-mid small{display:block;font:400 .78rem/1.3 var(--sans);color:var(--muted)}
+    .cable-mid::after{content:"";display:block;height:3px;background:var(--ink);margin:.4rem auto 0;width:5.5rem;border-radius:2px}
+
+    /* Figuras */
+    .fig{margin:1.25rem 0}
+    .fig-frame{min-height:13rem;background:repeating-linear-gradient(135deg,var(--tint) 0 12px,#e6ecf2 12px 24px);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;display:grid;place-items:center;box-shadow:var(--shadow);transition:transform .2s}
+    .fig-frame img{display:block;width:100%;height:auto;object-fit:cover}
+    .fig-frame.vacio img{display:none}
+    .fig-frame.vacio::before{content:attr(data-ph);font:500 .9rem/1.5 var(--sans);color:var(--muted);text-align:center;padding:1rem}
+    .fig-frame.zoom{cursor:zoom-in}
+    .fig-frame.zoom:hover{transform:scale(1.01)}
+    .fig figcaption{font:400 .9rem/1.5 var(--sans);color:var(--muted);margin-top:.5rem}
+    .fig figcaption b{color:var(--ink);font-weight:600}
+    .fig-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:1rem}
+    .fig-grid .fig{margin:.5rem 0}
+
+    /* Diagrama */
+    .diagrama{overflow-x:auto;margin:0;border:1px solid var(--line);border-radius:var(--radius);background:#fff;box-shadow:var(--shadow);-webkit-overflow-scrolling:touch}
+    .diagrama svg{display:block;width:100%;min-width:40rem;height:auto}
+    .dg-nodo{fill:#fff;stroke:#18212b;stroke-width:1.5}
+    .dg-t{font:600 15px Archivo,Arial,sans-serif;fill:#18212b;text-anchor:middle}
+    .dg-s{font:400 12.5px Archivo,Arial,sans-serif;fill:#566372;text-anchor:middle}
+    .dg-l{font:400 12.5px Archivo,Arial,sans-serif;fill:#566372}
+    .dg-eth{fill:none;stroke:#18212b;stroke-width:3}
+    .dg-wifi{fill:none;stroke:#2b66c9;stroke-width:3;stroke-dasharray:7 6}
+    .dg-ant{stroke:#18212b;stroke-width:3;stroke-linecap:round}
+    .desliza{display:none;font:400 .82rem var(--sans);color:var(--muted);margin:.4rem 0 0}
+
+    /* Referencias */
+    .refs{list-style:none;padding:0}
+    .refs li{padding-left:2rem;text-indent:-2rem;margin:.6rem 0}
+
+    footer{border-top:1px solid var(--line);padding:2rem 1.25rem 3rem;text-align:center;font:400 .9rem/1.5 var(--sans);color:var(--muted);background:#f8fafc}
+    footer p{margin:0 0 .5rem}
+
+    /* Visor de imágenes */
+    dialog{border:0;padding:0;background:transparent;max-width:min(94vw,66rem);max-height:94vh;overflow:visible}
+    dialog::backdrop{background:rgba(15,21,28,.85);backdrop-filter:blur(4px)}
+    .visor-in{background:#fff;padding:1.25rem;border-radius:var(--radius);box-shadow:0 20px 60px rgba(0,0,0,.3)}
+    .visor-in img{display:block;max-width:100%;max-height:70vh;width:auto;margin:0 auto;border-radius:4px}
+    .visor-in p{font:400 .9rem/1.5 var(--sans);color:var(--muted);margin:.75rem 0 0;text-align:center}
+    .visor-x{font:600 .9rem var(--sans);background:var(--ink);color:#fff;border:0;border-radius:4px;padding:.5rem .95rem;cursor:pointer;display:block;margin:0 0 .75rem auto;transition:background .2s}
+    .visor-x:hover{background:#000}
+
+    /* ========== MEDIA QUERIES ========== */
+
+    /* Tablets grandes y laptops pequeñas */
+    @media (max-width: 1024px){
+      .portada{grid-template-columns:8rem 1fr}
+      .portada-txt{padding:clamp(1.5rem,4vw,3rem)}
+      .datos{max-width:100%}
+    }
+
+    /* Tablets */
+    @media (max-width: 900px){
+      main{padding-left:1.5rem;padding-right:1.5rem}
+      .secuencia{grid-template-columns:1fr 1fr}
+    }
+
+    /* Móviles grandes */
+    @media (max-width: 720px){
+      html{scroll-padding-top:3.6rem}
+      body{font-size:1rem;line-height:1.72}
+      .portada{grid-template-columns:1fr;grid-template-rows:auto 1fr;min-height:auto}
+      .hilos{flex-direction:column;height:auto;min-height:3rem}
+      .hilos span{flex:none;height:.75rem;transform-origin:left;animation-name:crece-x}
+      .portada-txt{padding:2rem 1.25rem 3rem}
+      .plantel{margin-bottom:2rem}
+      .subtitulo{font-size:1.1rem;margin-bottom:2rem}
+      .logo-escuela{max-height:3.5rem;margin-bottom:1rem}
+
+      /* Navegación móvil */
+      .nav-in{padding:0 .5rem;gap:.5rem}
+      .brand span{display:none}
+      .brand img{height:2rem}
+      .links{margin-left:0;width:100%;-webkit-mask-image:linear-gradient(to right,#000 88%,transparent);mask-image:linear-gradient(to right,#000 88%,transparent)}
+      .links a{padding:.85rem .6rem;font-size:.85rem}
+
+      main{padding-left:1.15rem;padding-right:1.15rem}
+      section{padding-top:3rem}
+      h2{font-size:1.55rem}
+      h3{font-size:1rem}
+      .secuencia{grid-template-columns:1fr;gap:1rem}
+      .desliza{display:block}
+
+      /* Ajuste de tablas apiladas */
+      .apilar thead{position:absolute;left:-9999px}
+      .apilar,.apilar tbody,.apilar tr,.apilar td,.apilar th{display:block;width:100%}
+      .apilar tr{padding:.7rem 0;border-bottom:1px solid var(--line);background:#fff}
+      .apilar td,.apilar th{border:0;padding:.3rem .9rem}
+      .apilar td::before{content:attr(data-label);display:block;font:600 .78rem var(--sans);color:var(--muted);margin-bottom:.1rem}
+      .apilar tbody th{font:600 .78rem var(--sans);color:var(--muted);padding-top:.5rem}
+
+      /* Ajuste de tablas normales en móvil */
+      .tabla-wrap table{font-size:.85rem}
+      .tabla-wrap th, .tabla-wrap td{padding:.5rem .6rem}
+
+      /* Ajuste del cable */
+      .cable{grid-template-columns:1fr;gap:.5rem;margin-bottom:2.25rem}
+      .cable-mid{margin:.5rem 0}
+      .datos{grid-template-columns:6rem 1fr;padding:1rem}
+    }
+
+    /* Móviles pequeños */
+    @media (max-width: 600px){
+      .estandares{grid-template-columns:1fr}
+      .estandares dt{border-bottom:0;padding-bottom:0}
+      .estandares dd{border-top:0;padding-top:.2rem}
+      .estandares dd:last-of-type{border-bottom:1px solid var(--line)}
+      .estandares dt:last-of-type{border-bottom:0}
+
+      .fig-grid{grid-template-columns:1fr}
+      .datos{grid-template-columns:5rem 1fr;padding:.75rem;font-size:.9rem}
+      .datos dt{font-size:.8rem}
+      .datos dd{font-size:.9rem}
+
+      .portada h1{font-size:1.8rem}
+      .subtitulo{font-size:1rem}
+
+      pre{font-size:.75rem;padding:.75rem}
+      .nota{padding:.75rem}
+    }
+
+    /* Móviles muy pequeños */
+    @media (max-width: 380px){
+      .portada-txt{padding:1.5rem 1rem 2rem}
+      .portada h1{font-size:1.5rem}
+      .datos{grid-template-columns:1fr;gap:.25rem}
+      .datos dt{border-top:none;padding-bottom:0;font-weight:600;color:var(--ink)}
+      .datos dd{border-top:none;padding-top:0;padding-bottom:.5rem}
+      .datos dd:not(:last-child){border-bottom:1px solid var(--line)}
+    }
+
+    @media (prefers-reduced-motion:reduce){
+      html{scroll-behavior:auto}
+      .hilos span{animation:none}
+    }
+
+    @media print{
+      *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      .nav,dialog,.desliza{display:none}
+      .portada{min-height:auto;break-after:page}
+      .hilos span{animation:none}
+      section{break-inside:avoid-page}
+      figure,table,.cable,.diagrama,pre{break-inside:avoid}
+      a{color:inherit;text-decoration:none}
+      .logo-escuela-footer{display:block}
+    }
+  </style>
+</head>
+<body>
+
+<!-- ===================== PORTADA ===================== -->
+<header class="portada" id="top">
+  <div class="hilos" aria-hidden="true">
+    <span class="w-bn" style="--i:0"></span><span class="w-n" style="--i:1"></span>
+    <span class="w-bv" style="--i:2"></span><span class="w-az" style="--i:3"></span>
+    <span class="w-baz" style="--i:4"></span><span class="w-v" style="--i:5"></span>
+    <span class="w-bc" style="--i:6"></span><span class="w-c" style="--i:7"></span>
+  </div>
+  <div class="portada-txt">
+    <!-- LOGO DE LA ESCUELA EN PORTADA -->
+    <img src="img/logo-motul.png" alt="Logo del Instituto Tecnológico Superior de Motul" class="logo-escuela" onerror="this.style.display='none'">
+
+    <p class="inst">Tecnológico Nacional de México</p>
+    <p class="plantel">Campus Motul</p>
+    <h1>Diseño de modelos de conexión de red con estándares actualizados</h1>
+    <p class="subtitulo">Reporte de prácticas: cableado UTP, red inalámbrica y cámara IP</p>
+    <dl class="datos">
+      <dt>Alumno</dt><dd>Juan Pablo Cime Chim</dd>
+      <dt>Carrera</dt><dd>Ingeniería en Sistemas Computacionales</dd>
+      <dt>Grupo</dt><dd>5A</dd>
+      <dt>Materia</dt><dd>Fundamentos de Telecomunicaciones</dd>
+      <dt>Docente</dt><dd>Jose Luis Tamayo Canul</dd>
+      <dt>Fecha</dt><dd>19 de septiembre de 2026</dd>
+    </dl>
+  </div>
+</header>
+
+<nav class="nav" aria-label="Secciones del reporte">
+  <div class="nav-in">
+    <!-- LOGO EN LA BARRA DE NAVEGACIÓN -->
+    <a class="brand" href="#top">
+      <img src="img/logo-motul.png" alt="Logo" onerror="this.style.display='none'">
+      <span>Reporte de redes</span>
+    </a>
+    <div class="links">
+      <a href="#intro">Introducción</a>
+      <a href="#estandares">Estándares</a>
+      <a href="#practica-1">Práctica 1</a>
+      <a href="#practica-2">Práctica 2</a>
+      <a href="#practica-3">Práctica 3</a>
+      <a href="#modelo">Modelo</a>
+      <a href="#resultados">Resultados</a>
+      <a href="#conclusiones">Conclusiones</a>
+    </div>
+  </div>
+</nav>
+
+<main>
+
+  <!-- ===================== INTRODUCCIÓN ===================== -->
+  <section id="intro">
+    <h2>Introducción</h2>
+    <p>Este reporte documenta tres prácticas de redes realizadas en laboratorio: el ponchado de cable UTP con las normas T568A y T568B, la configuración de un router inalámbrico TP-Link TL-WR840N y la conexión de una cámara IP D-Link DCS-933L a la red que se creó.</p>
+    <p>Las prácticas forman una secuencia. Primero se fabrican los cables, después se usan para configurar el equipo de red y, por último, se conecta un dispositivo final a esa red. El resultado es un modelo de conexión que combina cableado estructurado, Ethernet, red inalámbrica y un dispositivo IP de videovigilancia, todo con estándares vigentes.</p>
+
+    <ol class="secuencia">
+      <li><strong>Práctica 1: Cables</strong><span>Ponchado de un cable con la misma norma en ambos extremos (B-B) y otro con normas distintas (A-B).</span></li>
+      <li><strong>Práctica 2: Router</strong><span>Configuración del TL-WR840N desde la laptop, conectada por Ethernet con cable B-B.</span></li>
+      <li><strong>Práctica 3: Cámara</strong><span>Cámara DCS-933L conectada por cable al router y laptop conectada por Wi-Fi.</span></li>
+    </ol>
+
+    <h3>Objetivo</h3>
+    <p>Diseñar un modelo de conexión que integre distintas tecnologías y dispositivos con estándares actualizados, y documentar su uso, su metodología y la evidencia de su funcionamiento.</p>
+
+    <h3>Metodología general</h3>
+    <p>Cada práctica siguió el mismo ciclo de trabajo: preparar el material, ejecutar el procedimiento, verificar el resultado con una herramienta o prueba y documentarlo con fotografías o capturas de pantalla. Las evidencias se numeran como figuras y se refieren en el texto.</p>
+
+    <h3>Equipo y software utilizados</h3>
+    <div class="tabla-wrap">
+      <table class="apilar">
+        <thead><tr><th>Equipo</th><th>Función</th><th>Práctica</th></tr></thead>
+        <tbody>
+        <tr><td data-label="Equipo">Cable UTP y conectores RJ45</td><td data-label="Función">Fabricación de los cables B-B y A-B</td><td data-label="Práctica">1</td></tr>
+        <tr><td data-label="Equipo">Pinza ponchadora y probador de cable</td><td data-label="Función">Ponchado y verificación de los cables</td><td data-label="Práctica">1</td></tr>
+        <tr><td data-label="Equipo">Router inalámbrico TP-Link TL-WR840N</td><td data-label="Función">Red Wi-Fi 802.11n a 2.4 GHz, hasta 300 Mbps, con dos antenas</td><td data-label="Práctica">2 y 3</td></tr>
+        <tr><td data-label="Equipo">Laptop con Ethernet y Wi-Fi</td><td data-label="Función">Configuración del router por cable y conexión inalámbrica posterior</td><td data-label="Práctica">2 y 3</td></tr>
+        <tr><td data-label="Equipo">Cámara IP D-Link DCS-933L</td><td data-label="Función">Dispositivo IP de videovigilancia</td><td data-label="Práctica">3</td></tr>
+        <tr><td data-label="Equipo">Software proporcionado por el docente</td><td data-label="Función">Localizar la cámara en la red y ver su video</td><td data-label="Práctica">3</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===================== ESTÁNDARES ===================== -->
+  <section id="estandares">
+    <h2>Estándares de referencia</h2>
+    <p>Cada práctica se apoya en normas que definen cómo se fabrica, se conecta y se protege una red.</p>
+    <dl class="estandares">
+      <dt>ANSI/TIA-568</dt>
+      <dd>Cableado de telecomunicaciones. Define los esquemas de color T568A y T568B y las categorías del cable de par trenzado (Cat5e, Cat6).</dd>
+      <dt>ISO/IEC 11801</dt>
+      <dd>Cableado estructurado genérico. Es el equivalente internacional de TIA-568 y fija límites como los 100 m por segmento.</dd>
+      <dt>IEEE 802.3</dt>
+      <dd>Ethernet por cable. Incluye 100BASE-TX (Fast Ethernet), 1000BASE-T (Gigabit) y la alimentación por Ethernet (PoE, 802.3af/at). Los puertos del TL-WR840N son Fast Ethernet (10/100 Mbps).</dd>
+      <dt>IEEE 802.11</dt>
+      <dd>Redes inalámbricas de área local (Wi-Fi). El TL-WR840N trabaja con 802.11b/g/n en la banda de 2.4 GHz.</dd>
+      <dt>WPA2-PSK</dt>
+      <dd>Seguridad de la Wi-Fi Alliance. Cifra la red inalámbrica con AES y una contraseña compartida.</dd>
+      <dt>TCP/IP y DHCP</dt>
+      <dd>Familia de protocolos de Internet y servicio que asigna direcciones IP de forma automática a los dispositivos de la red.</dd>
+    </dl>
+  </section>
+
+  <!-- ===================== PRÁCTICA 1 ===================== -->
+  <section id="practica-1" class="practica p1">
+    <h2>Práctica 1: Ponchado de cable UTP</h2>
+
+    <h3>Objetivo</h3>
+    <p>Fabricar dos cables de red, uno con la misma norma en ambos extremos y otro con normas distintas, y reconocer la diferencia entre ellos.</p>
+
+    <h3>Para qué sirve</h3>
+    <p>El cable con la misma norma en ambos extremos (B-B) se llama directo y conecta dispositivos de distinto tipo, por ejemplo una laptop con un router o un router con una cámara. El cable con normas distintas (A-B) se llama cruzado y conecta dispositivos del mismo tipo, como dos laptops.</p>
+    <p>Hoy la mayoría de los equipos detecta el tipo de cable automáticamente (Auto-MDIX), pero conocer la diferencia es la base del cableado estructurado. Fast Ethernet (100BASE-TX) solo usa los pines 1, 2, 3 y 6, que corresponden a los pares naranja y verde, y por eso esos son los hilos que cambian entre la norma A y la norma B.</p>
+
+    <div class="nota">
+      <p><strong>Modelo B (directo):</strong> ambos extremos del UTP se ponchan igual, con la misma norma (T568B en los dos lados).</p>
+      <p><strong>Modelo A-B (cruzado):</strong> un extremo se poncha como la norma B. En el otro extremo solo se intercambian los pares: los hilos naranjas ocupan exactamente el lugar de los verdes y los verdes el de los naranjas. Los pares azul y café no cambian de posición.</p>
+    </div>
+
+    <h3>Materiales</h3>
+    <ul>
+      <li>Cable UTP</li>
+      <li>Conectores RJ45</li>
+      <li>Pinza ponchadora</li>
+      <li>Probador de cable</li>
+    </ul>
+
+    <h3>Procedimiento</h3>
+    <ol>
+      <li>Cortar dos tramos de cable UTP.</li>
+      <li>Retirar unos 3 cm de la cubierta sin dañar los pares.</li>
+      <li>Destrenzar los hilos y ordenarlos según el esquema de color que corresponda a ese extremo. Conviene destrenzar lo mínimo necesario para no afectar el rendimiento del cable.</li>
+      <li>Recortar los hilos a la misma altura e insertarlos en el conector RJ45 hasta que toquen el fondo.</li>
+      <li>Ponchar el conector con la pinza.</li>
+      <li>Repetir el proceso en el otro extremo: con la misma norma en el cable 1 y con la norma A en el cable 2.</li>
+      <li>Probar cada cable con el probador de cable.</li>
+    </ol>
+
+    <h3>Esquemas de color</h3>
+    <div class="tabla-wrap">
+      <table>
+        <thead><tr><th>Pin</th><th>Norma B</th><th>Norma A</th><th>Diferencia</th></tr></thead>
+        <tbody id="pines"></tbody>
+      </table>
+    </div>
+    <p class="pie">Las filas resaltadas (pines 1, 2, 3 y 6) son las que cambian: el par naranja pasa a los pines 3 y 6, y el par verde pasa a los pines 1 y 2.</p>
+
+    <h3>Cable 1: modelo B, mismo esquema en ambos extremos</h3>
+    <div class="cable">
+      <div class="rj" data-std="B" data-label="Extremo 1: norma B"></div>
+      <div class="cable-mid">Directo<small>B-B</small></div>
+      <div class="rj" data-std="B" data-label="Extremo 2: norma B"></div>
+    </div>
+
+    <h3>Cable 2: un extremo con norma B y el otro con norma A</h3>
+    <div class="cable">
+      <div class="rj" data-std="B" data-label="Extremo 1: norma B"></div>
+      <div class="cable-mid">Cruzado<small>B-A</small></div>
+      <div class="rj" data-std="A" data-label="Extremo 2: norma A (naranjas y verdes intercambiados)"></div>
+    </div>
+
+    <h3>Verificación</h3>
+    <p>En el cable directo, los ocho indicadores del probador se encienden en orden del 1 al 8. En el cruzado se intercambian los pines 1 y 3, y los pines 2 y 6, mientras que 4, 5, 7 y 8 se mantienen, lo que confirma que el intercambio de naranjas y verdes quedó correcto.</p>
+
+    <h3>Evidencia</h3>
+    <div class="fig-grid">
+      <figure class="fig">
+        <div class="fig-frame" data-ph="Coloca aquí la foto: img/foto1.jpg"><img src="img/foto2.jpg" alt="Los dos cables UTP ponchados" loading="lazy"></div>
+        <figcaption><b>Figura 1.</b> Cable B-B (Norma 568B) terminado.</figcaption>
+      </figure>
+      <figure class="fig">
+        <div class="fig-frame" data-ph="Coloca aquí la foto: img/foto2.jpg"><img src="img/foto1.jpg" alt="Prueba de los cables con el probador" loading="lazy"></div>
+        <figcaption><b>Figura 2.</b> Cable A-A (Norma 568A) terminado.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ===================== PRÁCTICA 2 ===================== -->
+  <section id="practica-2" class="practica p2">
+    <h2>Práctica 2: Configuración del router TP-Link TL-WR840N</h2>
+
+    <h3>Objetivo</h3>
+    <p>Acceder a la configuración del TL-WR840N desde una laptop conectada por Ethernet y crear una red Wi-Fi protegida.</p>
+
+    <h3>Para qué sirve</h3>
+    <p>El TL-WR840N es un router inalámbrico N de 300 Mbps con dos antenas. Reparte la conexión entre sus puertos LAN de cable y su red Wi-Fi, y asigna direcciones IP a los dispositivos mediante su servidor DHCP. Para configurarlo se conectó la laptop por cable, de modo que el acceso no dependiera de la red Wi-Fi que se estaba modificando. Se usó el cable B-B porque la laptop y el router son dispositivos de distinto tipo.</p>
+    <div class="nota">
+      <p>En clase a este equipo se le llama módem. Técnicamente el TL-WR840N es un router inalámbrico, y en este reporte se usa la palabra router para referirse a él.</p>
+    </div>
+
+    <h3>Procedimiento</h3>
+    <ol>
+      <li>Conectar la laptop a un puerto LAN del router con el cable B-B (norma B en ambos extremos) y encender el equipo.</li>
+      <li>En la laptop, abrir el símbolo del sistema y ejecutar el comando <code>ipconfig</code>.</li>
+      <li>En el adaptador Ethernet, localizar la <em>Puerta de enlace predeterminada</em>. Esa es la dirección del router; en este modelo suele ser 192.168.0.1.</li>
+      <li>Escribir esa dirección en la barra del navegador e iniciar sesión en el panel de administración.</li>
+      <li>Abrir la configuración inalámbrica y definir el nombre de la red (SSID), la seguridad WPA2-PSK y la contraseña.</li>
+      <li>Guardar los cambios y comprobar que otro dispositivo pueda ver la red y conectarse.</li>
+    </ol>
+    <pre><code>C:\&gt; ipconfig
+
+Adaptador de Ethernet Ethernet:
+   Dirección IPv4. . . . . . . . . . . . : 192.168.0.100
+   Máscara de subred . . . . . . . . . . : 255.255.255.0
+   Puerta de enlace predeterminada . . . : 192.168.0.1</code></pre>
+    <p class="pie">Salida de "ipconfig"</p>
+
+    <h3>Parámetros configurados</h3>
+    <div class="tabla-wrap">
+      <table class="apilar">
+        <tbody>
+        <tr><th>Equipo</th><td>TP-Link TL-WR840N</td></tr>
+        <tr><th>Nombre de red (SSID)</th><td>ISC 5A JUAN PABLO CIME CHIM</td></tr>
+        <tr><th>Seguridad</th><td>WPA2-PSK</td></tr>
+        <tr><th>Contraseña</th><td><code>pablo123</code></td></tr>
+        <tr><th>Estándar inalámbrico</th><td>IEEE 802.11b/g/n, banda de 2.4 GHz</td></tr>
+        <tr><th>Cable de configuración</th><td>UTP directo (B-B) entre laptop y router</td></tr>
+        <tr><th>Herramienta de acceso</th><td><code>ipconfig</code> para obtener la puerta de enlace</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Evidencia</h3>
+    <div class="fig-grid">
+      <figure class="fig">
+        <div class="fig-frame" data-ph="Coloca aquí la captura: img/foto3.jpg"><img src="img/foto3.jpg" alt="Resultado del comando ipconfig" loading="lazy"></div>
+        <figcaption><b>Figura 3.</b> Puerta de enlace obtenida con ipconfig.</figcaption>
+      </figure>
+      <figure class="fig">
+        <div class="fig-frame" data-ph="Coloca aquí la captura: img/foto4.jpg"><img src="img/foto4.jpg" alt="Panel de configuración del router TL-WR840N" loading="lazy"></div>
+        <figcaption><b>Figura 4.</b> Configuración inalámbrica del TL-WR840N.</figcaption>
+      </figure>
+      <figure class="fig">
+        <div class="fig-frame" data-ph="Coloca aquí la captura: img/foto5.jpg"><img src="img/foto5.jpg" alt="Red Wi-Fi visible en un dispositivo" loading="lazy"></div>
+        <figcaption><b>Figura 5.</b> La red creada aparece disponible en un dispositivo.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ===================== PRÁCTICA 3 ===================== -->
+  <section id="practica-3" class="practica p3">
+    <h2>Práctica 3: Cámara IP D-Link DCS-933L</h2>
+
+    <h3>Objetivo</h3>
+    <p>Conectar una cámara IP D-Link DCS-933L al router y visualizar su video desde la laptop, conectada por Wi-Fi, con el software proporcionado por el docente.</p>
+
+    <h3>Para qué sirve</h3>
+    <p>Una cámara IP es un dispositivo final que transmite video por la red usando el protocolo IP, por lo que puede verse desde cualquier equipo de la misma red local. En esta práctica se combinaron dos medios: la cámara quedó conectada por cable UTP al router y la laptop se conectó de forma inalámbrica. Es un modelo común en videovigilancia, donde los dispositivos fijos van por cable y los equipos de consulta por Wi-Fi.</p>
+    <p>El cable B-B se usó de nuevo porque la cámara y el router son dispositivos de distinto tipo. En instalaciones más grandes es común alimentar las cámaras por el mismo cable mediante PoE (IEEE 802.3af/at).</p>
+
+    <h3>Procedimiento</h3>
+    <ol>
+      <li>Alimentar la cámara con su adaptador de corriente.</li>
+      <li>Conectar la cámara a un puerto LAN del router con el cable B-B.</li>
+      <li>Conectar la laptop a la red Wi-Fi creada en la práctica anterior para establecer la conexión inalámbrica.</li>
+      <li>Abrir el software proporcionado por el docente y buscar la cámara en la red. El servidor DHCP del router le asigna su dirección IP.</li>
+      <li>Abrir la transmisión y verificar que el video se muestre en vivo.</li>
+    </ol>
+
+    <div class="nota">
+      <p><strong>Condición para que funcione:</strong> el software solo encuentra la cámara si laptop y cámara están en la misma red local. Como ambas dependen del mismo router, reciben direcciones del mismo rango y pueden comunicarse aunque una use cable y la otra Wi-Fi.</p>
+    </div>
+
+    <h3>Evidencia</h3>
+    <div class="fig-grid">
+      <figure class="fig">
+        <div class="fig-frame" data-ph="Coloca aquí la foto: img/foto6.jpg"><img src="img/foto6.jpg" alt="Cámara IP conectada al router con cable UTP" loading="lazy"></div>
+        <figcaption><b>Figura 6.</b> Conexión física de la cámara DCS-933L al router.</figcaption>
+      </figure>
+      <figure class="fig">
+        <div class="fig-frame" data-ph="Coloca aquí la captura: img/foto7.jpg"><img src="img/foto7.jpg" alt="Software mostrando el video de la cámara" loading="lazy"></div>
+        <figcaption><b>Figura 7.</b> Video de la cámara en el software proporcionado por el docente.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ===================== MODELO INTEGRADO ===================== -->
+  <section id="modelo">
+    <h2>Modelo de conexión integrado</h2>
+    <p>El modelo final une las tres prácticas. La cámara llega al router por UTP, la laptop lo configuró primero por cable y después se conectó por Wi-Fi, y el router extiende la red inalámbrica a otros equipos.</p>
+
+    <figure class="fig">
+      <div class="diagrama">
+        <svg viewBox="0 0 720 370" role="img" aria-labelledby="dg-titulo dg-desc" xmlns="http://www.w3.org/2000/svg">
+          <title id="dg-titulo">Diagrama del modelo de conexión</title>
+          <desc id="dg-desc">La cámara IP D-Link DCS-933L y la laptop de configuración se conectan por cable UTP B-B al router TP-Link TL-WR840N, que ofrece Wi-Fi a la laptop y a otros dispositivos.</desc>
+
+          <path class="dg-eth" d="M200 55 H240 V160 H280"/>
+          <path class="dg-eth" d="M200 305 H240 V180 H280"/>
+          <path class="dg-wifi" d="M440 170 H520"/>
+
+          <rect class="dg-nodo" x="20" y="20" width="180" height="70" rx="6"/>
+          <text class="dg-t" x="110" y="52">Cámara IP D-Link</text>
+          <text class="dg-s" x="110" y="72">DCS-933L, práctica 3</text>
+
+          <rect class="dg-nodo" x="20" y="270" width="180" height="70" rx="6"/>
+          <text class="dg-t" x="110" y="302">Laptop</text>
+          <text class="dg-s" x="110" y="322">configuración, práctica 2</text>
+
+          <line class="dg-ant" x1="320" y1="115" x2="305" y2="78"/>
+          <line class="dg-ant" x1="400" y1="115" x2="415" y2="78"/>
+          <circle cx="305" cy="78" r="4.5" fill="#18212b"/>
+          <circle cx="415" cy="78" r="4.5" fill="#18212b"/>
+          <rect class="dg-nodo" x="280" y="115" width="160" height="110" rx="6"/>
+          <text class="dg-t" x="360" y="163">Router TL-WR840N</text>
+          <text class="dg-s" x="360" y="183">2 antenas, DHCP</text>
+
+          <rect class="dg-nodo" x="520" y="115" width="180" height="110" rx="6"/>
+          <text class="dg-t" x="610" y="163">Laptop y dispositivos</text>
+          <text class="dg-s" x="610" y="183">conectados por Wi-Fi</text>
+
+          <text class="dg-s" x="220" y="47">B-B</text>
+          <text class="dg-s" x="220" y="297">B-B</text>
+          <text class="dg-s" x="480" y="158">Wi-Fi</text>
+
+          <line class="dg-eth" x1="20" y1="358" x2="50" y2="358"/>
+          <text class="dg-l" x="58" y="362">Ethernet (IEEE 802.3), cable UTP</text>
+          <line class="dg-wifi" x1="330" y1="358" x2="360" y2="358"/>
+          <text class="dg-l" x="368" y="362">Wi-Fi (IEEE 802.11), WPA2</text>
+        </svg>
+      </div>
+      <p class="desliza">Desliza el diagrama para verlo completo.</p>
+      <figcaption><b>Figura 8.</b> Modelo de conexión integrado con los estándares utilizados.</figcaption>
+    </figure>
+
+    <div class="tabla-wrap">
+      <table class="apilar">
+        <thead><tr><th>Práctica</th><th>Tecnología</th><th>Estándar principal</th></tr></thead>
+        <tbody>
+        <tr><td data-label="Práctica">1. Ponchado de cable UTP</td><td data-label="Tecnología">Cableado estructurado</td><td data-label="Estándar principal">ANSI/TIA-568 (T568A y T568B)</td></tr>
+        <tr><td data-label="Práctica">2. Router TL-WR840N</td><td data-label="Tecnología">Ethernet y Wi-Fi</td><td data-label="Estándar principal">IEEE 802.3, IEEE 802.11, WPA2</td></tr>
+        <tr><td data-label="Práctica">3. Cámara DCS-933L</td><td data-label="Tecnología">Dispositivo IP en red local</td><td data-label="Estándar principal">TCP/IP, DHCP</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===================== RESULTADOS ===================== -->
+  <section id="resultados">
+    <h2>Resultados</h2>
+    <div class="tabla-wrap">
+      <table class="apilar">
+        <thead><tr><th>Práctica</th><th>Resultado</th><th>Evidencia</th></tr></thead>
+        <tbody>
+        <tr><td data-label="Práctica">1</td><td data-label="Resultado">Un cable B-B, con la misma norma en ambos extremos, y un cable A-B, con naranjas y verdes intercambiados en un extremo, verificados con el probador.</td><td data-label="Evidencia">Figuras 1 y 2</td></tr>
+        <tr><td data-label="Práctica">2</td><td data-label="Resultado">Acceso al TL-WR840N desde la laptop por Ethernet usando la puerta de enlace obtenida con ipconfig, y red Wi-Fi creada con seguridad WPA2-PSK.</td><td data-label="Evidencia">Figuras 3, 4 y 5</td></tr>
+        <tr><td data-label="Práctica">3</td><td data-label="Resultado">Cámara DCS-933L conectada por cable B-B al router, laptop conectada por Wi-Fi y video en vivo en el software del docente.</td><td data-label="Evidencia">Figuras 6 y 7</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===================== CONCLUSIONES ===================== -->
+  <section id="conclusiones">
+    <h2>Conclusiones</h2>
+    <p>Las prácticas permitieron recorrer una red completa desde la capa física hasta el dispositivo final: se fabricaron cables según ANSI/TIA-568, se accedió a un router y se protegió su red inalámbrica con WPA2, y se integró una cámara IP mediante software de gestión.</p>
+    <p>La diferencia entre los cables quedó clara al ponchar ambos: en el modelo B los dos extremos son iguales, y en el modelo A-B solo se intercambian los pares naranja y verde. Ese detalle explica por qué un cable directo conecta equipos distintos y uno cruzado conecta equipos iguales.</p>
+    <p>También se comprobó que un mismo router puede unir cable e inalámbrico en una sola red local. El modelo es pequeño, pero sigue los mismos principios y estándares que una instalación profesional.</p>
+
+    <h3>Aprendizajes principales</h3>
+    <ul>
+      <li>Distinguir y fabricar cables B-B y A-B según ANSI/TIA-568.</li>
+      <li>Usar <code>ipconfig</code> para encontrar la puerta de enlace y acceder a un router.</li>
+      <li>Configurar una red Wi-Fi con nombre propio y seguridad WPA2-PSK.</li>
+      <li>Integrar un dispositivo IP a una red que combina cable y Wi-Fi.</li>
+    </ul>
+  </section>
+
+  <!-- ===================== REFERENCIAS ===================== -->
+  <section id="referencias">
+    <h2>Referencias</h2>
+    <ul class="refs">
+      <li>ANSI/TIA. (2018). <em>ANSI/TIA-568.2-D: Balanced twisted-pair telecommunications cabling and components standard.</em></li>
+      <li>ISO/IEC. (2017). <em>ISO/IEC 11801-1: Information technology, generic cabling for customer premises.</em></li>
+      <li>IEEE. <em>IEEE Std 802.3: Standard for Ethernet.</em></li>
+      <li>IEEE. <em>IEEE Std 802.11: Wireless LAN medium access control (MAC) and physical layer (PHY) specifications.</em></li>
+      <li>Wi-Fi Alliance. <em>WPA2 Security.</em></li>
+      <li>TP-Link. <em>TL-WR840N: Router inalámbrico N de 300 Mbps, especificaciones y guía de usuario.</em> [Agregar enlace y fecha de consulta]</li>
+      <li>D-Link. <em>DCS-933L: Cámara de red inalámbrica, manual de usuario.</em> [Agregar enlace y fecha de consulta]</li>
+    </ul>
+  </section>
+
+</main>
+
+<footer>
+  <!-- LOGO EN EL PIE DE PÁGINA -->
+  <img src="img/logo-motul.png" alt="Logo del Instituto Tecnológico Superior de Motul" class="logo-escuela-footer" onerror="this.style.display='none'">
+  <p>Reporte elaborado por Juan Pablo Cime Chim</p>
+  <p>Fundamentos de Telecomunicaciones, 2026</p>
+</footer>
+
+<dialog id="visor" aria-label="Imagen ampliada">
+  <div class="visor-in">
+    <button type="button" class="visor-x">Cerrar</button>
+    <img alt="">
+    <p></p>
+  </div>
+</dialog>
+
+<script>
+  (function () {
+    // Esquemas de color T568A / T568B
+    var HILOS = {
+      bn: ['Blanco/naranja', 'w-bn'], n: ['Naranja', 'w-n'],
+      bv: ['Blanco/verde', 'w-bv'],   v: ['Verde', 'w-v'],
+      az: ['Azul', 'w-az'],           baz: ['Blanco/azul', 'w-baz'],
+      bc: ['Blanco/café', 'w-bc'],    c: ['Café', 'w-c']
+    };
+    var ESQ = {
+      B: ['bn', 'n', 'bv', 'az', 'baz', 'v', 'bc', 'c'],
+      A: ['bv', 'v', 'bn', 'az', 'baz', 'n', 'bc', 'c']
+    };
+    var CAMBIA = [0, 1, 2, 5]; // pines 1, 2, 3 y 6
+
+    var pines = document.getElementById('pines');
+    if (pines) {
+      pines.innerHTML = ESQ.B.map(function (b, i) {
+        var a = ESQ.A[i];
+        var cambia = CAMBIA.indexOf(i) > -1;
+        return '<tr' + (cambia ? ' class="cambia"' : '') + '><td data-label="Pin">' + (i + 1) + '</td>' +
+                '<td data-label="Norma B"><span class="hilo ' + HILOS[b][1] + '"></span>' + HILOS[b][0] + '</td>' +
+                '<td data-label="Norma A"><span class="hilo ' + HILOS[a][1] + '"></span>' + HILOS[a][0] + '</td>' +
+                '<td data-label="Diferencia">' + (cambia ? 'Cambia' : 'Igual') + '</td></tr>';
+      }).join('');
+    }
+
+    document.querySelectorAll('.rj').forEach(function (el) {
+      var bars = ESQ[el.dataset.std].map(function (k, i) {
+        return '<span class="bar ' + HILOS[k][1] + '" title="Pin ' + (i + 1) + ': ' + HILOS[k][0] + '"><b>' + (i + 1) + '</b></span>';
+      }).join('');
+      el.innerHTML = '<div class="rj-body">' + bars + '</div><div class="rj-label">' + el.dataset.label + '</div>';
+    });
+
+    // Visor: al tocar una imagen se abre ampliada
+    var visor = document.getElementById('visor');
+    var visorImg = visor.querySelector('img');
+    var visorTxt = visor.querySelector('p');
+    function abrir(frame) {
+      var img = frame.querySelector('img');
+      var cap = frame.parentElement.querySelector('figcaption');
+      visorImg.src = img.src;
+      visorImg.alt = img.alt;
+      visorTxt.textContent = cap ? cap.textContent : '';
+      if (visor.showModal) visor.showModal();
+    }
+    visor.addEventListener('click', function (e) {
+      if (e.target === visor || e.target.classList.contains('visor-x')) visor.close();
+    });
+
+    document.querySelectorAll('.fig-frame').forEach(function (frame) {
+      var img = frame.querySelector('img');
+      var vacio = function () { frame.classList.add('vacio'); };
+      var listo = function () {
+        frame.classList.add('zoom');
+        frame.setAttribute('tabindex', '0');
+        frame.setAttribute('role', 'button');
+        frame.setAttribute('aria-label', 'Ampliar imagen: ' + img.alt);
+      };
+      img.addEventListener('error', vacio);
+      img.addEventListener('load', listo);
+      if (img.complete) { img.naturalWidth === 0 ? vacio() : listo(); }
+      frame.addEventListener('click', function () { if (frame.classList.contains('zoom')) abrir(frame); });
+      frame.addEventListener('keydown', function (e) {
+        if ((e.key === 'Enter' || e.key === ' ') && frame.classList.contains('zoom')) { e.preventDefault(); abrir(frame); }
+      });
+    });
+
+    // Resalta en el menú la sección visible
+    var links = Array.prototype.slice.call(document.querySelectorAll('.links a'));
+    var mapa = {};
+    links.forEach(function (a) { mapa[a.getAttribute('href').slice(1)] = a; });
+    if ('IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (entradas) {
+        entradas.forEach(function (e) {
+          if (e.isIntersecting) {
+            links.forEach(function (l) { l.classList.remove('on'); });
+            var activo = mapa[e.target.id];
+            if (activo) {
+              activo.classList.add('on');
+              var cont = activo.parentElement;
+              if (cont.scrollWidth > cont.clientWidth) {
+                cont.scrollTo({ left: activo.offsetLeft - 24, behavior: 'smooth' });
+              }
+            }
+          }
+        });
+      }, { rootMargin: '-30% 0px -60% 0px' });
+      document.querySelectorAll('main section[id]').forEach(function (s) { io.observe(s); });
+    }
+  })();
+</script>
+</body>
+</html>
